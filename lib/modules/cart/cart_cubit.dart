@@ -8,12 +8,11 @@ class CartCubit extends Cubit<List<urunler_sepeti>> {
 
   Future<void> deleteCartItem(int sepetId) async {
     try {
-      
-      final updatedList = state.where((item) => item.sepetId != sepetId).toList();
+      final updatedList =
+          state.where((item) => item.sepetId != sepetId).toList();
       emit(updatedList);
-      
+
       await shopDaoRepository.deleteCartItem(sepetId);
-      
     } catch (e) {
       await getAllCartProducts();
       rethrow;
@@ -36,18 +35,45 @@ class CartCubit extends Cubit<List<urunler_sepeti>> {
     int price,
     int siparisAdeti,
     String brand,
-    int sepetId, 
+    int sepetId,
   ) async {
-    await shopDaoRepository.addCartItem(
-      
-      name,
-      image,
-      category,
-      price,
-      siparisAdeti,
-      brand, 
-      sepetId: sepetId,
-    );
+    bool urunSepetteVar = false;
+    int mevcutAdet = 0;
+    int? sepetItemId;
+
+    for (var urun in state) {
+      if (urun.ad == name && urun.fiyat == price) {
+        urunSepetteVar = true;
+        mevcutAdet = urun.siparisAdet ?? 0;
+        sepetItemId = urun.sepetId;
+        break;
+      }
+    }
+
+    if (urunSepetteVar && sepetItemId != null) {
+      await shopDaoRepository.deleteCartItem(sepetItemId);
+
+      await shopDaoRepository.addCartItem(
+        name,
+        image,
+        category,
+        price,
+        mevcutAdet + siparisAdeti,
+        brand,
+        sepetId: sepetId,
+      );
+    } else {
+      await shopDaoRepository.addCartItem(
+        name,
+        image,
+        category,
+        price,
+        siparisAdeti,
+        brand,
+        sepetId: sepetId,
+      );
+    }
+
     getAllCartProducts();
   }
 }
